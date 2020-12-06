@@ -3,6 +3,10 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+const passport = require('passport');
+const localConfig = require('./config/passport-local');
+var session = require('express-session');
+var FileStore = require('session-file-store')(session);
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -29,52 +33,42 @@ app.set('view engine', 'jade');
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser(
-  '31354171'
-));
+// app.use(cookieParser(
+//   '31354171'
+// ));
+
+
+app.use(session({
+  name:'session-id',
+  secret:'33360800',
+  saveUninitialized:false,
+  resave:false,
+  store:new FileStore()
+
+}))
+app.use(passport.initialize());
+app.use(passport.session()); 
+app.use('/', indexRouter);
+app.use('/users', usersRouter);
+
 
 function auth(req,res,next){
-  console.log(req.signedCookies)
-  if(!req.signedCookies.user){
-    var authHeader =  req.headers.authorization;
-    if (!authHeader){
-      var err = new Error('you are not authenticated a');
+  console.log(req.user);
+  if(!req.user){
+      var err = new Error('you are not authenticated');
       res.setHeader('WWW-Authenticate','Basic');
       err.status = 401;
       console.log(err);
-      return next(err)
-    } 
-    var auth = new Buffer.from(authHeader.split(' ')[1],'base64').toString().split(':');
-    var username = auth[0];
-    var password = auth[1];
-
-    if(username ==='admin' && password ==='password'){
-      res.cookie('user','admin',{signed:true})
-      next();
-    } else {
-      var err = new Error('you are not authenticated');
-      res.setHeader('WWW-Authenticate','Basic');
-      err.status = 401;
-      return next(err)
-    }
-  } else{
-    if (req.signedCookies.user ==='admin'){
+      return next(err);
+  } else {
       next()
-    } else{
-      var err = new Error('you are not authenticated');
-      res.setHeader('WWW-Authenticate','Basic');
-      err.status = 401;
-      return next(err)
-    }
-  }
+    } 
   
 }
 
 app.use(auth);
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
 app.use('/dishes',dishRouter);
 app.use('/leaders',leaderRouter);
 app.use('/promotions',promoRouter);
