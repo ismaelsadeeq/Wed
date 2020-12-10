@@ -1,16 +1,17 @@
 const mongoose =   require('mongoose');
-
 const Dishes = require('../models/dishes');
 
 async function getADishes(req,res){
   const dishId = req.params.id;
   const dish = await Dishes.findById(dishId);
+  await Dishes.populate('comment.author')
   res.setHeader('Content-Type', 'application/json');
   res.json(dish);
   console.log(dish);
 }
 async function getAllDishes(req,res){
   const dish = await Dishes.find({});
+  // await Dishes.populate('comment.author')
   res.setHeader('Content-Type', 'application/json');
   res.json(dish);
   console.log(dish);

@@ -22,12 +22,15 @@ async function addComment(req,res){
   const dishId = req.params.id
   const dish = await Dishes.findById(dishId);
   if (dish){
+    data.author = req.user._id
     const comment = await dish.comments.push(data);
     await dish.save();
+    const Dish = await Dishes.findById(dishId);
+    dish.populate('comments.author')
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');
-    res.json(comment);
-    console.log(comment);
+    res.json(dish);
+    console.log(dish);
   }  else {
     err = new Error('Dish' + dishId + 'doesnot exist')
     err.status = 400
@@ -39,7 +42,7 @@ async function editComment(req,res){
   data = req.body;
   const dishId = req.params.id;
   const commentId = req.params.commentId;
-  const dish = await Dishes.findById(dishId); 
+  const Dish = await Dishes.findById(dishId); 
   if (dish && dish.comments.id(commentId)){
     if (data.rating){
       dish.comments.id(commentId).rating = data.rating
@@ -48,9 +51,11 @@ async function editComment(req,res){
       dish.comments.id(commentId).comment = data.comment
     };
     await dish.save();
+    const Dish = await Dishes.findById(dishId); 
+    await populate('comment.author')
     res.setHeader('Content-Type', 'application/json');
-    res.json(dish.comments.id(commentId));
-    console.log(dish.comments.id(commentId));
+    res.json(Dish);
+    console.log(dish);
   } else if(!dish){
     err = new Error('Dish' + dishId + 'doesnot exist')
     err.status = 400
@@ -70,7 +75,8 @@ async function deleteComment(req,res){
       dish.comments.id(dish.comment[i]._id).remove();
     };
     await dish.save();
-  
+    const Dish = await Dishes.findById(dishId); 
+    await Dish.populate('comment.author')
     res.statusCode = 200;
     res.setHeader('Content-Type', 'appliication/json');
     res.json(comment);
@@ -104,6 +110,7 @@ async function getACommentOfADish(req,res){
   const dishId = req.params.id;
   const commentId = req.params.commentId
   const dish = await Dishes.findById(dishId);
+   Dishes.dish.populate('comment.author')
   console.log(dish)
   if (dish !== null && dish.comments.id(commentId) !== null){
     console.log('hello')

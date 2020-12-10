@@ -1,5 +1,6 @@
 const passport = require('passport');
 const user = require('../models/user');
+const authenticate = require('../config/passport-jwt');
 
 async function register(req,res){
   data = req.body
@@ -9,6 +10,13 @@ async function register(req,res){
     res.setHeader('Content-Type', 'application/json');
     res.json({'status':'An error occured'})
   } else{
+    if (req.body.firstname){
+      User.firstname = req.body.firstname
+    }
+    if (req.body.lastname){
+      User.lastname = req.body.lastname
+    }
+    await User.save();
     passport.authenticate('local')(req,res,()=>{
       res.statusCode = 200;
       res.setHeader('Content-Type', 'application/json');
@@ -65,10 +73,16 @@ async function register(req,res){
 // };
 
 
+// async function login(req,res){
+//   res.statusCode = 200;
+//       res.setHeader('Content-Type', 'application/json');
+//       res.json({'success':true,'status':'logged in successfully'})
+// }
 async function login(req,res){
-  res.statusCode = 200;
+      const token =  authenticate.getToken({_id:req.user._id}); 
+      res.statusCode = 200;
       res.setHeader('Content-Type', 'application/json');
-      res.json({'success':true,'status':'logged in successfully'})
+      res.json({'success':true,'token':token,'status':'logged in successfully'})
 }
 async function logout(req,res){
   if(req.session){
@@ -82,6 +96,7 @@ async function logout(req,res){
       return next(err)
   }
 };
+
 
 module.exports ={
   register,
